@@ -1,0 +1,3 @@
+add_fsm_state_simple(JumpingController_Initial)
+
+add_fsm_data_directory(data)
