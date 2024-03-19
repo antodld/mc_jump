@@ -52,6 +52,8 @@ ObserverPipelines:
         config:                              #
           bodySensor: FloatingBase
 
+tickerMode: false
+
 # Implement some additional text states
 states:
   Jump::Initial:
@@ -78,12 +80,12 @@ states:
       CoMTask6D:
         type: com6d
         robot: rhps1
-        weight: 10
-        stiffness: 10
-        # damping: 1
+        weight: 75
+        stiffness: 1
+        damping: 12
         above: ["LeftFoot","RightFoot"]
         move_com_world:
-          translation: [0.0,0,-0.1]
+          translation: [0.0,0,0]
         completion:
           eval: 3e-2
                 
@@ -96,7 +98,8 @@ states:
         weight: 10
         stiffness: 200
         move_com_world:
-          translation: [0.,0,0.4]
+          translation: [0.,0,0.3]
+          rotation: [0.,0,1.1]
         completion:
           timeout: 0.1
     RemoveContactsAfter:
@@ -118,17 +121,17 @@ states:
         stiffness: 100
         completion:
           # timeout: 0.65
-          timeout: 0.28
-      left_foot_ori:
-        type: orientation
-        frame: LeftFoot
-        weight: 2
-        orientation: [0,0,0]
-      left_foot_ori:
-        type: orientation
-        frame: LeftFoot
-        weight: 2
-        orientation: [0,0,0]
+          timeout: 0.3
+      # left_foot_ori:
+      #   type: orientation
+      #   frame: LeftFoot
+      #   weight: 2
+      #   orientation: [0,0,0]
+      # left_foot_ori:
+      #   type: orientation
+      #   frame: LeftFoot
+      #   weight: 2
+      #   orientation: [0,0,0]
       # body_ori:
       #   type: orientation
       #   frame: BODY

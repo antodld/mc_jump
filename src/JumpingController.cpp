@@ -3,6 +3,7 @@
 JumpingController::JumpingController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config,{mc_solver::QPSolver::Backend::TVM})
 {
+  isTicker = config("tickerMode");
   dt_ = dt;
   mc_rtc::log::success("JumpingController init done ");
 }
@@ -27,6 +28,30 @@ bool JumpingController::run()
     robot().posW(realRobot().posW());
 
     return mc_control::fsm::Controller::run();
+  }
+  if(executor_.state() == "Jump::TakeOff" || executor_.state() == "HalfSitting")
+  {
+    reset_rdy = true;
+  }
+  if(reset_rdy && (executor_.state() != "Jump::TakeOff" && executor_.state() != "HalfSitting")  && !isTicker)
+  {
+    robot().mbc().q = realRobot().mbc().q;
+    robot().mbc().alpha = realRobot().mbc().alpha;
+    robot().posW(realRobot().posW()); 
+    reset_rdy = false;
+  }
+  if(executor_.state() == "Jump::Flight")
+  {
+    flight_count++;
+
+    if(flight_count * dt_ > 0.1 && robot().frame("LeftFoot").wrench().force().z() > 20)
+    {
+      executor_.resume("Jump::Land"); 
+      mc_rtc::log::info("Landing, switching state, flight duration {}",flight_count * dt_);
+      flight_count = 0;
+      return mc_control::fsm::Controller::run();
+    }
+
   }
   // if (executor_.state() == "Jump::Land")
   // {

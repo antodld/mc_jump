@@ -14,4 +14,11 @@ struct JumpingController_DLLAPI JumpingController : public mc_control::fsm::Cont
   void reset(const mc_control::ControllerResetData & reset_data) override;
 
   double dt_ = 0.005;
+
+  bool reset_rdy = false;
+
+  bool isTicker = true;
+
+  size_t flight_count = 0;
+
 };
