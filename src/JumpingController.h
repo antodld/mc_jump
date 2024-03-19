@@ -12,4 +12,6 @@ struct JumpingController_DLLAPI JumpingController : public mc_control::fsm::Cont
   bool run() override;
 
   void reset(const mc_control::ControllerResetData & reset_data) override;
+
+  double dt_ = 0.005;
 };

@@ -5,7 +5,7 @@ Managed: false
 StepByStep: true
 # Change idle behaviour, if true the state is kept until transition,
 # otherwise the FSM holds the last state until transition
-IdleKeepState: false
+IdleKeepState: true
 # Where to look for state libraries
 StatesLibraries:
 - "@MC_STATES_DEFAULT_RUNTIME_INSTALL_PREFIX@"
@@ -24,9 +24,10 @@ robots:
 constraints:
 - type: contact
 - type: dynamics
-  damper: [0.1, 0.01, 0.5]
-- type: compoundJoint
-# Collision constraint
+  damper: [0.03,0.02,0.01]
+  # infTorque: true
+# - type: compoundJoint
+# # Collision constraint
 collisions:
 - type: collision
   useMinimal: true
@@ -39,18 +40,116 @@ contacts:
   r1Surface: RightFoot
   r2Surface: AllGround
 
-# Some options for a specific robot
-jvrc1:
-  posture:
-    stiffness: 1
-    weight: 10
-  ff:
-    stiffness: 2
-    weight: 100
+ObserverPipelines:
+  - name: ObserverPipeline
+    gui: true
+    observers:
+      - type: Encoder
+        robot: rhps1
+        update_robot: rhps1
+      - type: BodySensor
+        update: true
+        config:                              #
+          bodySensor: FloatingBase
+
 # Implement some additional text states
-states: {}
+states:
+  Jump::Initial:
+    base: MetaTasks
+    tasks:
+      CoMTask6D:
+        type: com6d
+        robot: rhps1
+        weight: 10
+        stiffness: 10
+        # com6d:
+        #   translation: [0,0,0.8]
+        above: ["LeftFoot","RightFoot"]
+        move_com:
+          translation: [0.0,0,-0.1]
+          rotation: [0,0.25,0]
+        # move_com: [-0.05,0,-0.2]
+        completion:
+          eval: 3e-2
+  Jump::Land:
+    base: HalfSitting
+    stiffness: 0
+    tasks:
+      CoMTask6D:
+        type: com6d
+        robot: rhps1
+        weight: 10
+        stiffness: 10
+        # damping: 1
+        above: ["LeftFoot","RightFoot"]
+        move_com_world:
+          translation: [0.0,0,-0.1]
+        completion:
+          eval: 3e-2
+                
+  Jump::TakeOff:
+    base: MetaTasks
+    tasks:
+      CoMTask6D:
+        type: com6d
+        robot: rhps1
+        weight: 10
+        stiffness: 200
+        move_com_world:
+          translation: [0.,0,0.4]
+        completion:
+          timeout: 0.1
+    RemoveContactsAfter:
+    - r2: ground
+      r1Surface: LeftFoot
+      r2Surface: AllGround
+    - r2: ground
+      r1Surface: RightFoot
+      r2Surface: AllGround
+    ResetPostures: true
+
+  Jump::Flight:
+    base: MetaTasks
+    ResetPostures: true
+    tasks:
+      posture:
+        type: posture
+        weight: 10
+        stiffness: 100
+        completion:
+          # timeout: 0.65
+          timeout: 0.28
+      left_foot_ori:
+        type: orientation
+        frame: LeftFoot
+        weight: 2
+        orientation: [0,0,0]
+      left_foot_ori:
+        type: orientation
+        frame: LeftFoot
+        weight: 2
+        orientation: [0,0,0]
+      # body_ori:
+      #   type: orientation
+      #   frame: BODY
+      #   weight: 100
+      #   orientation: [0,-2,0]
+    AddContactsAfter:
+    - r2: ground
+      r1Surface: LeftFoot
+      r2Surface: AllGround
+    - r2: ground
+      r1Surface: RightFoot
+      r2Surface: AllGround
+
+
 # Transitions map
 transitions:
-- [JumpingController_Initial, OK, JumpingController_Initial, Strict]
+- [JumpingController_Initial, OK, Jump::Initial, Auto]
+- [Jump::Initial, OK, Jump::TakeOff, Strict]
+- [Jump::TakeOff, OK, Jump::Flight,Auto]
+- [Jump::Flight, OK, Jump::Land,Auto]
+- [Jump::Land, OK, HalfSitting,Strict]
+- [HalfSitting, OK, Jump::Initial,Strict]
 # Initial state
 init: JumpingController_Initial

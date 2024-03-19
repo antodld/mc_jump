@@ -14,6 +14,8 @@ void JumpingController_Initial::start(mc_control::fsm::Controller & ctl_)
 bool JumpingController_Initial::run(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<JumpingController &>(ctl_);
+  ctl.getPostureTask(ctl.robot().name())->weight(1);
+  ctl.getPostureTask(ctl.robot().name())->stiffness(0.5);
   output("OK");
   return true;
 }
